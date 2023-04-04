@@ -71,7 +71,7 @@ for kind,length in zip(['_matched','_allHC'],[200,6000]):
         results_features = []
         params_features = []
         preds_features = []
-        for fname,features,scale_features in zip([fnames[0]],[cols[0]],[scale_cols[0]]):
+        for fname,features,scale_features in zip(fnames,cols,scale_cols):
             if fname == 'intercept':
                 merged['Intercept'] = 1
                 fit_intercept = False
@@ -103,59 +103,92 @@ for kind,length in zip(['_matched','_allHC'],[200,6000]):
                         X_train[scale_features] = scaler.transform(X_train[scale_features])
                         X_test[scale_features] = scaler.transform(X_test[scale_features])
                     # inner CV to find best alpha parameter for Lasso
-                    Cs = np.logspace(-5, 4, 10)
-                    logregcv = linear_model.LogisticRegressionCV(cv=model_selection.StratifiedKFold(n_splits=5, random_state=3,shuffle=True),
-                                                                                                                       Cs=Cs,penalty='l1',
-                                                                                                                       solver='saga',refit=True,max_iter=1000,scoring='average_precision',class_weight='balanced',n_jobs=10,fit_intercept=fit_intercept).fit(X_train,y_train)
-                    results.append(logregcv)
-                    performance.loc[(y,fold),('test','C')] = logregcv.C_
-                    performance.loc[(y,fold),('train','C')] = logregcv.C_
-                    
-                    # evaluate test
-                    y_pred_proba = logregcv.predict_proba(X_test)[::,1]
-                    preds.loc[(X_test.index,fold),(y,'test')] = y_pred_proba
-                    auc = metrics.roc_auc_score(y_test, y_pred_proba)
-                    performance.loc[(y,fold),('test','ROCAUC')] = auc
-                    fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
-                    performance.loc[(y,fold),('test','fpr')] = fpr
-                    performance.loc[(y,fold),('test','tpr')] = tpr
-                    pre,rec,_ = metrics.precision_recall_curve(y_test,y_pred_proba)
-                    performance.loc[(y,fold),('test','precision')] = pre
-                    performance.loc[(y,fold),('test','recall')] = rec
-                    performance.loc[(y,fold),('test','precision recall AUC')] = metrics.average_precision_score(y_test,y_pred_proba)
-                    curve.loc[(y,cv),('tpr',slice(None))] = np.append(tpr, np.zeros(length-len(tpr)) + np.nan)
-                    curve.loc[(y,cv),('fpr',slice(None))]= np.append(fpr, np.zeros(length-len(fpr)) + np.nan)
-                    curve.loc[(y,cv),('recall',slice(None))]= np.append(rec, np.zeros(length-len(rec)) + np.nan)
-                    curve.loc[(y,cv),('precision',slice(None))]= np.append(pre, np.zeros(length-len(pre)) + np.nan)
-                    # evaluate train
-                    y_pred_proba = logregcv.predict_proba(X_train)[::,1]
-                    preds.loc[(X_train.index,fold),(y,'train')] = y_pred_proba
-                    fpr, tpr, _ = metrics.roc_curve(y_train,  y_pred_proba)
-                    auc = metrics.roc_auc_score(y_train, y_pred_proba)
-                    performance.loc[(y,fold),('train','ROCAUC')] = auc
-                    performance.loc[(y,fold),('train','fpr')] = fpr
-                    performance.loc[(y,fold),('train','tpr')] = tpr
-                    pre,rec,_ = metrics.precision_recall_curve(y_train,y_pred_proba)
-                    performance.loc[(y,fold),('train','precision')] = pre
-                    performance.loc[(y,fold),('train','recall')] = rec
-                    performance.loc[(y,fold),('train','precision recall AUC')] = metrics.average_precision_score(y_train,y_pred_proba)
+                    if fname != 'noskill':
+                        if fname == 'intercept' or fname == 'covariates':
+                            logregcv = linear_model.LogisticRegression(C=100,penalty='none', solver='saga', max_iter=1000,class_weight='balanced', n_jobs=10, fit_intercept=fit_intercept, random_state= None).fit(X_train,y_train)
+                        else:
+                            Cs = np.logspace(-5, 4, 10)
 
-                    params.loc[(y,fold),:] = logregcv.coef_
+                            logregcv = linear_model.LogisticRegressionCV(cv=model_selection.StratifiedKFold(n_splits=5, random_state=3,shuffle=True),
+                                                                                                                               Cs=Cs,penalty='l1',
+                                                                                                                               solver='saga',refit=True,max_iter=1000,scoring='average_precision',class_weight='balanced',n_jobs=10,fit_intercept=fit_intercept).fit(X_train,y_train)
+                            performance.loc[(y,fold),('test','C')] = logregcv.C_
+                            performance.loc[(y,fold),('train','C')] = logregcv.C_
+                        results.append(logregcv)
 
-                    # test on external data
-                    if y == 'diag_PDHC' or y =='diag_ProdHC':
-                        if y == 'diag_PDHC':
-                            external_test = merged[merged['Status']=='Prodromal']
-                        elif y =='diag_ProdHC':
-                            external_test = merged[merged['Status']=='Diseased']
-#                         if stacked=='_stacked':
-#                             external_test = external_test.dropna(subset=features_all)[features]
-#                         else:
-#                             external_test = external_test.dropna(subset=features)[features]
-                        if len(scale_features) >0:
-                            external_test[scale_features] = scaler.transform(external_test[scale_features])
-                        y_pred_proba = logregcv.predict_proba(external_test[features])[::,1]
-                        preds.loc[(external_test.index,fold),(y,'test')] = y_pred_proba
+                        # evaluate test
+                        y_pred_proba = logregcv.predict_proba(X_test)[::,1]
+                        preds.loc[(X_test.index,fold),(y,'test')] = y_pred_proba
+                        auc = metrics.roc_auc_score(y_test, y_pred_proba)
+                        performance.loc[(y,fold),('test','ROCAUC')] = auc
+                        fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
+                        performance.loc[(y,fold),('test','fpr')] = fpr
+                        performance.loc[(y,fold),('test','tpr')] = tpr
+                        pre,rec,_ = metrics.precision_recall_curve(y_test,y_pred_proba)
+                        performance.loc[(y,fold),('test','precision')] = pre
+                        performance.loc[(y,fold),('test','recall')] = rec
+                        performance.loc[(y,fold),('test','precision recall AUC')] = metrics.average_precision_score(y_test,y_pred_proba)
+                        curve.loc[(y,fold),('tpr',slice(None))] = np.append(tpr, np.zeros(length-len(tpr)) + np.nan)
+                        curve.loc[(y,fold),('fpr',slice(None))]= np.append(fpr, np.zeros(length-len(fpr)) + np.nan)
+                        curve.loc[(y,fold),('recall',slice(None))]= np.append(rec, np.zeros(length-len(rec)) + np.nan)
+                        curve.loc[(y,fold),('precision',slice(None))]= np.append(pre, np.zeros(length-len(pre)) + np.nan)
+                        # evaluate train
+                        y_pred_proba = logregcv.predict_proba(X_train)[::,1]
+                        preds.loc[(X_train.index,fold),(y,'train')] = y_pred_proba
+                        fpr, tpr, _ = metrics.roc_curve(y_train,  y_pred_proba)
+                        auc = metrics.roc_auc_score(y_train, y_pred_proba)
+                        performance.loc[(y,fold),('train','ROCAUC')] = auc
+                        performance.loc[(y,fold),('train','fpr')] = fpr
+                        performance.loc[(y,fold),('train','tpr')] = tpr
+                        pre,rec,_ = metrics.precision_recall_curve(y_train,y_pred_proba)
+                        performance.loc[(y,fold),('train','precision')] = pre
+                        performance.loc[(y,fold),('train','recall')] = rec
+                        performance.loc[(y,fold),('train','precision recall AUC')] = metrics.average_precision_score(y_train,y_pred_proba)
+
+                        params.loc[(y,fold),:] = logregcv.coef_
+
+                        # test on external data
+                        if y == 'diag_PDHC' or y =='diag_ProdHC':
+                            if y == 'diag_PDHC':
+                                external_test = merged[merged['Status']=='Prodromal']
+                            elif y =='diag_ProdHC':
+                                external_test = merged[merged['Status']=='Diseased']
+    #                         if stacked=='_stacked':
+    #                             external_test = external_test.dropna(subset=features_all)[features]
+    #                         else:
+    #                             external_test = external_test.dropna(subset=features)[features]
+                            if len(scale_features) >0:
+                                external_test[scale_features] = scaler.transform(external_test[scale_features])
+                            y_pred_proba = logregcv.predict_proba(external_test[features])[::,1]
+                            preds.loc[(external_test.index,fold),(y,'test')] = y_pred_proba
+                    else:
+                        # model that always predicts case
+                        # evaluate test
+                        preds.loc[(X_test.index,fold),(y,'test')] = 1
+                        auc = metrics.roc_auc_score(y_test, preds.loc[(X_test.index,fold),(y,'test')])
+                        performance.loc[(y,fold),('test','ROCAUC')] = auc
+                        fpr, tpr, _ = metrics.roc_curve(y_test,  preds.loc[(X_test.index,fold),(y,'test')])
+                        performance.loc[(y,fold),('test','fpr')] = fpr
+                        performance.loc[(y,fold),('test','tpr')] = tpr
+                        pre,rec,_ = metrics.precision_recall_curve(y_test,preds.loc[(X_test.index,fold),(y,'test')])
+                        performance.loc[(y,fold),('test','precision')] = pre
+                        performance.loc[(y,fold),('test','recall')] = rec
+                        performance.loc[(y,fold),('test','precision recall AUC')] = metrics.average_precision_score(y_test,preds.loc[(X_test.index,fold),(y,'test')])
+                        curve.loc[(y,fold),('tpr',slice(None))] = np.append(tpr, np.zeros(length-len(tpr)) + np.nan)
+                        curve.loc[(y,fold),('fpr',slice(None))]= np.append(fpr, np.zeros(length-len(fpr)) + np.nan)
+                        curve.loc[(y,fold),('recall',slice(None))]= np.append(rec, np.zeros(length-len(rec)) + np.nan)
+                        curve.loc[(y,fold),('precision',slice(None))]= np.append(pre, np.zeros(length-len(pre)) + np.nan)
+                        # evaluate train
+                        preds.loc[(X_train.index,fold),(y,'train')] = 1
+                        fpr, tpr, _ = metrics.roc_curve(y_train,  preds.loc[(X_train.index,fold),(y,'train')])
+                        auc = metrics.roc_auc_score(y_train, preds.loc[(X_train.index,fold),(y,'train')])
+                        performance.loc[(y,fold),('train','ROCAUC')] = auc
+                        performance.loc[(y,fold),('train','fpr')] = fpr
+                        performance.loc[(y,fold),('train','tpr')] = tpr
+                        pre,rec,_ = metrics.precision_recall_curve(y_train,preds.loc[(X_train.index,fold),(y,'train')])
+                        performance.loc[(y,fold),('train','precision')] = pre
+                        performance.loc[(y,fold),('train','recall')] = rec
+                        performance.loc[(y,fold),('train','precision recall AUC')] = metrics.average_precision_score(y_train,preds.loc[(X_train.index,fold),(y,'train')])
 
 
                 try:

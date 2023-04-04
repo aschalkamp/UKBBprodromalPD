@@ -12,7 +12,7 @@ def load_features(data_path):
     allfeatures_scale.remove('male')
     blood = merged.columns[256:]
     blood_scale = merged.columns[256:]
-    lifestyle = np.hstack(['TownsendDeprivationIndex',merged.columns[240:245],merged.columns[250:256]])
+    lifestyle = np.hstack(['TownsendDeprivationIndex',merged.columns[239:245],merged.columns[250:256]])
     lifestyle_scale = ['BMI', 'Waist_Circumference', 'Hip_Circumference',
            'Diastolic_BloodPressure', 'PulseRate', 'BodyFat_Percentage',
            'TownsendDeprivationIndex']

@@ -45,7 +45,7 @@ for subset,sname in zip([['all_acc_features','blood'],['all_acc_features','genet
 
     perf = pd.DataFrame(index=pd.MultiIndex.from_product([diagnames,np.arange(5)],names=['model','cv']),
                                 columns=pd.MultiIndex.from_product([['train','test'],['AUROC','AUPRC','fpr','tpr','precision','recall','C']],names=['kind','metric']))
-
+    print(sname)
     for kind,diag,diagname in zip(kinds,diags,diagnames):
         # add prediction output from single-modality models to dataframe
         for i,feature in enumerate(features):
@@ -62,10 +62,9 @@ for subset,sname in zip([['all_acc_features','blood'],['all_acc_features','genet
                 print('matched HC model')
                 path = f'{model_path}/{feature}/{kind}models_pred_stacked_matched.csv'
                 popkind = '_matched'
-            print(kind,diag,diagname)
             preds = pd.read_csv(path,index_col=[0,1],header=[0,1])
-            print(preds.head())
             preds = preds.loc[:,(f'diag_{diag}',slice(None))].droplevel(level=0,axis=1)
+            preds = preds.dropna(how='all',axis='rows')
             if i == 0:
                 pred_models = pd.DataFrame(columns=pd.MultiIndex.from_product([features,['train','test']],names=['model','kind']),
                                           index=preds.index)
@@ -74,18 +73,19 @@ for subset,sname in zip([['all_acc_features','blood'],['all_acc_features','genet
         preds_models.append(pred_models)
         if kind == 'HC':
             merged = pd.read_csv(f'{data_path}/merged_data/unaffectedNoOsteoMatchedHC.csv').set_index('eid')
-            #merged = merged.dropna(subset=allfeatures,axis='rows',how='any')
+            merged = merged.dropna(subset=[f'diag_{diag}'],axis='rows',how='any')
             merged_pred = pd.merge(merged,pred_models,left_index=True,right_index=True,how='inner')
         elif kind =='allHC':
             merged = pd.read_csv(f'{data_path}/merged_data/unaffectedNoOsteoAllHC.csv').set_index('eid')
+            merged = merged.dropna(subset=[f'diag_{diag}'],axis='rows',how='any')
             merged_pred = pd.merge(merged,pred_models,left_index=True,right_index=True,how='inner')
         elif kind=='pop':
             merged = pd.read_csv(f'{data_path}/merged_data/populationNoOsteoAllHC.csv').set_index('eid')
+            merged = merged.dropna(subset=[f'diag_{diag}'],axis='rows',how='any')
             merged_pred = pd.merge(merged,pred_models,left_index=True,right_index=True,how='inner')
-        print(merged_pred.shape)
-        print(merged_pred[f'diag_{diag}'].value_counts())
-        preds = pd.DataFrame(index=pd.MultiIndex.from_product([merged_pred.index,np.arange(5)],names=['eid','cv']),
+        preds = pd.DataFrame(index=merged_pred.index,
                                 columns=['train','test'])
+        print(preds.shape,preds.head())
         dftrain = merged_pred.dropna(subset=np.hstack([merged_pred.filter(regex='train').columns,f'diag_{diag}']),how='any')
         dftrain = dftrain.drop(columns=np.hstack([merged_pred.filter(regex='test').columns]))
         dftrain.columns = [*dftrain.columns[:-5],'all_acc_features','blood','genetics','lifestyle','prodromal_symptoms']
@@ -93,7 +93,6 @@ for subset,sname in zip([['all_acc_features','blood'],['all_acc_features','genet
         dftest = merged_pred.dropna(subset=np.hstack([merged_pred.filter(regex='test').columns,f'diag_{diag}']),how='any')
         dftest = dftest.drop(columns=np.hstack([merged_pred.filter(regex='train').columns]))
         dftest.columns = [*dftest.columns[:-5],'all_acc_features','blood','genetics','lifestyle','prodromal_symptoms']
-        print(dftrain[['all_acc_features','blood','genetics','lifestyle','prodromal_symptoms']].describe())
 
         coefs = pd.DataFrame(index=np.arange(5),columns=pd.MultiIndex.from_product([np.hstack(['Intercept',subset]),['coef','pval','CI_upper',
                                                                                                                        'CI_lower']],
@@ -101,15 +100,17 @@ for subset,sname in zip([['all_acc_features','blood'],['all_acc_features','genet
         for cv in np.arange(5):
             #grab all train from CV
             dftr = dftrain.loc[(slice(None),cv),:].dropna(subset=subset,
-                                                        how='any')
+                                                        how='any').droplevel(level=1,axis=0)
             dfte = dftest.loc[(slice(None),cv),:].dropna(subset=subset,
-                                                        how='any')
+                                                        how='any').droplevel(level=1,axis=0)
             #model = smf.logit(f"diag_{diag} ~  all_acc_features + blood + genetics + lifestyle + prodromal_symptoms", data=dftr).fit_regularized(method='l1', alpha=0.1)
             Cs = np.logspace(-3, 1, 5)
-            model = linear_model.LogisticRegressionCV(cv=model_selection.StratifiedKFold(n_splits=5, random_state=3,shuffle=True),Cs=Cs,penalty='l1',
-                                                      solver='saga',refit=True,max_iter=1000,scoring='average_precision',
+            #model = linear_model.LogisticRegressionCV(cv=model_selection.StratifiedKFold(n_splits=5, random_state=3,shuffle=True),Cs=Cs,penalty='l1',
+            #                                          solver='saga',refit=True,max_iter=1000,scoring='average_precision',
+            #                                          class_weight='balanced',n_jobs=-1,fit_intercept=True).fit(dftr[subset],dftr[f'diag_{diag}'])
+            model = linear_model.LogisticRegression(C=100,penalty='none',
+                                                      solver='saga',max_iter=1000,
                                                       class_weight='balanced',n_jobs=-1,fit_intercept=True).fit(dftr[subset],dftr[f'diag_{diag}'])
-
             dfte['pred'] = model.predict_proba(dfte[subset])[::,1]
             preds.loc[(dfte.index,cv),'test'] = dfte['pred']
             preds.loc[(dftr.index,cv),'train']= model.predict_proba(dftr[subset])[::,1]
@@ -117,7 +118,7 @@ for subset,sname in zip([['all_acc_features','blood'],['all_acc_features','genet
             #coefs.loc[cv,(slice(None),'pval')] = model.pvalues.values
             #coefs.loc[cv,(slice(None),'CI_upper')] = model.conf_int(alpha=0.05).values[:,1]
             #coefs.loc[cv,(slice(None),'CI_lower')] = model.conf_int(alpha=0.05).values[:,0]
-            perf.loc[(diagname,cv),('test','C')] = model.C_
+            #perf.loc[(diagname,cv),('test','C')] = model.C_
             fpr, tpr, _ = metrics.roc_curve(dftest.loc[dfte.index,f'diag_{diag}'],dfte['pred'])
             perf.loc[(diagname,cv),('test','AUROC')] = metrics.roc_auc_score(dftest.loc[dfte.index,f'diag_{diag}'],dfte['pred'])
             perf.loc[(diagname,cv),('test','fpr')] = fpr

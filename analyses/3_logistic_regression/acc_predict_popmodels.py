@@ -27,6 +27,8 @@ data_path = '/scratch/c.c21013066/data/ukbiobank'
 from joblib import effective_n_jobs
 print(effective_n_jobs(-1))
 
+#models = ['logreg','linearSVM','rbfSVM']
+
 
 covs,allfeatures,allfeatures_scale,blood,blood_scale,lifestyle,lifestyle_scale,genetics,genetics_scale,prod,prod_acc = load_modalities.load_features(f'{data_path}')
 
@@ -63,7 +65,8 @@ for pop_kind,length in zip(['_allHC'],[7000]):
         results_features = []
         params_features = []
         preds_features = []
-        for fname,features,scale_features in zip([fnames[0]],[cols[0]],[scale_cols[0]]):
+
+        for fname,features,scale_features in zip(fnames,cols,scale_cols):
             print(pop_kind,stacked)
             if fname == 'intercept':
                 merged['Intercept'] = 1
@@ -80,10 +83,10 @@ for pop_kind,length in zip(['_allHC'],[7000]):
             performance = pd.DataFrame(columns=pd.MultiIndex.from_product([['train','test'],['ROCAUC','accuracy','precision recall AUC',
                                                                                              'fpr','tpr','recall',
                                                                                              'precision','C']],names=['kind','metric']),
-                                       index=pd.MultiIndex.from_product([models,np.arange(10)],names=['model','cv_fold'])) 
+                                       index=pd.MultiIndex.from_product([models,np.arange(5)],names=['model','cv_fold'])) 
             results = []
-            params = pd.DataFrame(index=pd.MultiIndex.from_product([models,np.arange(10)],names=['model','cv_fold']),columns=features)
-            preds = pd.DataFrame(index=pd.MultiIndex.from_product([merged.index,np.arange(10)],
+            params = pd.DataFrame(index=pd.MultiIndex.from_product([models,np.arange(5)],names=['model','cv_fold']),columns=features)
+            preds = pd.DataFrame(index=pd.MultiIndex.from_product([merged.index,np.arange(5)],
                                                                   names=['eid','cv_fold']),
                                  columns=pd.MultiIndex.from_product([models,['train','test']],names=['model','kind']))
             curve = pd.DataFrame(index=pd.MultiIndex.from_product([models,np.arange(5)],names=['model','cv']),
@@ -106,23 +109,17 @@ for pop_kind,length in zip(['_allHC'],[7000]):
                         X_train[scale_features] = scaler.transform(X_train[scale_features])
                         X_test[scale_features] = scaler.transform(X_test[scale_features])
                     # inner CV to find best alpha parameter for Lasso
-                    if fname=='intercept':
-                        Cs = np.logspace(0, 4, 5)
-                        print(X_train.shape,y_train.sum())
-                        print(X_test.shape,y_test.sum())
-                        logregcv = linear_model.LogisticRegressionCV(cv=model_selection.StratifiedKFold(n_splits=5, random_state=3,shuffle=True),
-                                                                     Cs=Cs,penalty='l1',solver='saga',refit=True,max_iter=1000,scoring='average_precision',
-                                                                     class_weight='balanced',n_jobs=-1,fit_intercept=fit_intercept).fit(X_train,y_train)
+                    if fname == 'intercept' or fname == 'covariates':
+                        logregcv = linear_model.LogisticRegression(C=100,penalty='none', solver='saga', max_iter=1000,class_weight='balanced', n_jobs=10, fit_intercept=fit_intercept, random_state= None).fit(X_train,y_train)
                     else:
                         Cs = np.logspace(-5, 4, 10)
-                        print(X_train.shape,y_train.sum())
-                        print(X_test.shape,y_test.sum())
+                    
                         logregcv = linear_model.LogisticRegressionCV(cv=model_selection.StratifiedKFold(n_splits=5, random_state=3,shuffle=True),
-                                                                     Cs=Cs,penalty='l1',solver='saga',refit=True,max_iter=1000,scoring='average_precision',
-                                                                     class_weight='balanced',n_jobs=-1,fit_intercept=fit_intercept).fit(X_train,y_train)
+                                                                                                                           Cs=Cs,penalty='l1',
+                                                                                                                           solver='saga',refit=True,max_iter=1000,scoring='average_precision',class_weight='balanced',n_jobs=10,fit_intercept=fit_intercept).fit(X_train,y_train)
+                        performance.loc[(y,fold),('test','C')] = logregcv.C_
+                        performance.loc[(y,fold),('train','C')] = logregcv.C_
                     results.append(logregcv)
-                    performance.loc[(y,fold),('test','C')] = logregcv.C_
-                    performance.loc[(y,fold),('train','C')] = logregcv.C_
 
                     y_pred_proba = logregcv.predict_proba(X_test)[::,1]
                     preds.loc[(X_test.index,fold),(y,'test')] = y_pred_proba

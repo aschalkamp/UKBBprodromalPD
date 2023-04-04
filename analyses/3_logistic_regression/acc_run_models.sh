@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=64gb
 #SBATCH --account=scw1329
-#SBATCH --time=00-23:00:00 # Time limit hh:mm:ss
+#SBATCH --time=01-23:00:00 # Time limit hh:mm:ss
 #SBATCH -e /scratch/c.c21013066/log/acc/%x-%A_%a.err # Standard error
 #SBATCH -o /scratch/c.c21013066/log/acc/%x-%A_%a.out # Standard output
 #SBATCH --job-name=stacked_noOsteo# Descriptive job name

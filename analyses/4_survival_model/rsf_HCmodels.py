@@ -44,25 +44,27 @@ models =['diag_ProdHC']
 fnames = ['intercept','covariates',
           'genetics+family','lifestyle_nofam','blood','acc','all_acc_features','prodromalsigns_beforePD',
          'genetics+family+all_acc_features','lifestyle+all_acc_features','blood+all_acc_features','prodromalsigns_beforePD+all_acc_features',
-'all_acc_features+blood+lifestyle+genetics+prodromalsigns_beforePD']
+'all_acc_features+blood+lifestyle+genetics+prodromalsigns_beforePD','prodromalsigns_beforeacc','prodromalsigns_beforeacc+all_acc_features',
+         'all_acc_features+blood+lifestyle+genetics+prodromalsigns_beforeacc']
 cols = [['Intercept'],np.hstack(['Intercept',covs]),
         np.hstack([covs,genetics,'Intercept']),np.hstack([covs,lifestyle,'Intercept']),
-       np.hstack([covs,blood,'Intercept']),np.hstack([covs,"Parkinson's disease",'Intercept']),np.hstack(['No_wear_time_bias_adjusted_average_acceleration',covs,'Intercept']),
+       np.hstack([covs,blood,'Intercept']),np.hstack(['No_wear_time_bias_adjusted_average_acceleration',covs,'Intercept']),
        np.hstack([allfeatures,'Intercept']),np.hstack([covs,prod,'Intercept']),
        np.hstack([genetics,allfeatures,'Intercept']),np.hstack([lifestyle,allfeatures,'Intercept']),
-       np.hstack([blood,allfeatures,'Intercept']),np.hstack([prod,allfeatures,'Intercept']),np.hstack([allfeatures,blood,lifestyle,genetics,prod,'Intercept'])]
+       np.hstack([blood,allfeatures,'Intercept']),np.hstack([prod,allfeatures,'Intercept']),np.hstack([allfeatures,blood,lifestyle,genetics,prod,'Intercept']),
+       np.hstack([covs,prod_acc,'Intercept']),np.hstack([prod_acc,allfeatures,'Intercept']),np.hstack([allfeatures,blood,lifestyle,genetics,prod_acc,'Intercept'])]
 scale_cols = [[],covs[:1],
               np.hstack([covs[:1],genetics_scale]), 
              np.hstack([covs[:1],lifestyle_scale]),np.hstack([covs[:1],blood_scale]),
-             np.hstack([covs[:1],"Parkinson's disease"]),
               np.hstack(['No_wear_time_bias_adjusted_average_acceleration',covs[:1]]),allfeatures_scale,
              covs[:1],
             np.hstack([genetics_scale,allfeatures_scale]),np.hstack([lifestyle_scale,allfeatures_scale]),
-       np.hstack([blood_scale,allfeatures_scale]),allfeatures_scale,np.hstack([allfeatures_scale,blood_scale,lifestyle_scale,genetics_scale])]
+       np.hstack([blood_scale,allfeatures_scale]),allfeatures_scale,np.hstack([allfeatures_scale,blood_scale,lifestyle_scale,genetics_scale]),
+              covs[:1],allfeatures_scale,np.hstack([allfeatures_scale,blood_scale,lifestyle_scale,genetics_scale])]
 
-features_all = np.hstack([allfeatures,blood,lifestyle,genetics,prod])
+features_all = np.hstack([allfeatures,blood,lifestyle,genetics,prod,prod_acc])
 
-for kind in ['_allHC']:
+for kind in ['_matched','_allHC']:
     if kind == '_matched':
         merged = pd.read_csv(f'{data_path}/merged_data/unaffectedNoOsteoMatchedHC.csv').set_index('eid')
     elif kind == '_allHC':
@@ -94,7 +96,7 @@ for kind in ['_allHC']:
     for name in models:
         df = merged.dropna(subset=[name])
 
-        for features,scale,fname in zip(cols[12:],scale_cols[12:],fnames[12:]):
+        for features,scale,fname in zip([cols[13]],[scale_cols[13]],[fnames[13]]):
             try:
                 os.mkdir(f'{model_path}/{fname}')
             except OSError as error:
@@ -152,6 +154,8 @@ for kind in ['_allHC']:
                 pred_surv = rsf.predict_survival_function(df_dummy_test[pred[2:]],return_array=True)
                 np.save(f'{model_path}/{fname}/rsf_{kind}testpred_CV{cv}.csv',pred_surv)
                 df_dummy_test.to_csv(f'{model_path}/{fname}/{kind}rsftest_cv{cv}.csv')
+                df_dummy_test['y_risk'] = cph_risk_scores
+                df_dummy_test[['Status','Survival_in_years','y_risk']].to_csv(f'{model_path}/{fname}/{kind}rsf_testrisk_CV{cv}.csv')
                 #plt.savefig('/scratch/c.c21013066/images/ukbiobank/accelerometer/models/coxphsurvival_prodhc_auc_time_test.png',bbox_inches="tight")
                 #result = inspection.permutation_importance(
                 #                rsf, df_dummy_test[pred[2:]], data_y_test, n_repeats=15, random_state=123)

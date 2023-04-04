@@ -19,4 +19,4 @@ source activate py38R
 
 
 #python /scratch/c.c21013066/Paper/ProdromalUKBB/analyses/4_survival_model/rsf_HCmodels.py
-python /scratch/c.c21013066/Paper/ProdromalUKBB/analyses/4_survival_model/rsf_POPmodels.py#
+python /scratch/c.c21013066/Paper/ProdromalUKBB/analyses/4_survival_model/rsf_POPmodels.py
