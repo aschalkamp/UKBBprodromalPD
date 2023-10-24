@@ -1,6 +1,9 @@
 # Wearable devices identify Parkinson’s disease up to 7 years before clinical diagnosis
 
-This repository contains all the code necessary to replicate the analysis presented in the pre-print: 
+This repository contains all the code necessary to replicate the analysis presented in the Nature Medicine article:
+Wearable movement-tracking data identify Parkinson’s disease years before clinical diagnosis, Schalkamp et al., 2023 (https://doi.org/10.1038/s41591-023-02440-2)
+
+also available as a pre-print on medRxiv:
 Wearable devices can identify Parkinson’s disease up to 7 years before clinical diagnosis, Schalkamp et al., 2022 (https://doi.org/10.1101/2022.11.28.22282809)
 
 ## Requirements
