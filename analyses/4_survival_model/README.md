@@ -1,0 +1,3 @@
+# Learn time to diagnosis
+
+Here, we train several survival random forests in a cross-validation. They can all be called via acc_run_models.sh and we distinguish between models trained on cases vs matched unaffected controls (rsf_HCmodels.py), cases vs population (rsf_POPmodels.py). These train models to identfiy prodromal Parkinson's disease cases from the respective control group, where we treat each control as censored. We train on five different single modality models and one combined model which is the union of the modalities.

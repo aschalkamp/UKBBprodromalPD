@@ -1,0 +1,204 @@
+26202:
+  name: AAM
+  follow_up_months: 120
+  full_name: Age at menopause
+  gender: female
+  scale: quantitative
+26206:
+  name: AD
+  follow_up_months: 120
+  full_name: Alzheimer's disease
+  gender: both
+  scale: binary
+26212:
+  name: AF
+  follow_up_months: 120
+  full_name: Atrial fibrillation
+  gender: both
+  scale: binary
+26204: 
+  name: AMD
+  follow_up_months: 144
+  full_name: Age-related macular degeneration
+  gender: both
+  scale: binary
+26210:
+  name: AST
+  follow_up_months: 120
+  full_name: Asthma
+  gender: both
+  scale: binary
+26220:
+  name: BC
+  follow_up_months: 120
+  full_name: Breast cancer
+  gender: female
+  scale: binary
+26214:
+  name: BD
+  follow_up_months: 120
+  full_name: Bipolar disorder
+  gender: both
+  scale: binary
+26216:
+  name: BMI
+  follow_up_months: 120
+  full_name: Body mass index
+  gender: both
+  scale: quantitative
+26229:
+  name: CD
+  follow_up_months: 120
+  full_name: Crohn's disease
+  gender: both
+  scale: binary
+26225:
+  name: CED
+  follow_up_months: 120
+  full_name: Coeliac disease
+  gender: both
+  scale: binary
+26218:
+  name: CRC
+  follow_up_months: 120
+  full_name: Bowel cancer
+  gender: both
+  scale: binary
+26223:
+  name: CVD_UK
+  follow_up_months: 120
+  full_name: Cardiovascular disease UK
+  gender: both
+  scale: binary
+26234:
+  name: EBMDT
+  follow_up_months: 120
+  full_name: Estimated bone mineral density T-score
+  gender: both
+  scale: quantitative
+26232:
+  name: EOC
+  follow_up_months: 120
+  full_name: Epithelial ovarian cancer
+  gender: female
+  scale: binary
+26238:
+  name: HBA1C_DF
+  follow_up_months: 120
+  full_name: Glycated haemoglobin (diabetes free)
+  gender: both
+  scale: quantitative
+26242: 
+  name: HDL
+  follow_up_months: 120
+  full_name: HDL cholesterol
+  gender: both
+  scale: quantitative
+26240:
+  name: HEIGHT
+  follow_up_months: 120
+  full_name: Height
+  gender: both
+  scale: quantitative
+26244:
+  name: HT
+  follow_up_months: 120
+  full_name: Hypertension
+  gender: both
+  scale: binary
+26246:
+  name: IOP
+  follow_up_months: 120
+  full_name: Intraocular pressure
+  gender: both
+  scale: quantitative
+26248:
+  name: ISS
+  follow_up_months: 120
+  full_name: Ischaemic stroke
+  gender: both
+  scale: binary
+26250:
+  name: LDL_SF
+  follow_up_months: 120
+  full_name: LDL cholesterol (statin free)
+  gender: both
+  scale: quantitative
+26252:
+  name: MEL
+  follow_up_months: 120
+  full_name: Melanoma
+  gender: both
+  scale: binary
+26254:
+  name: MS
+  follow_up_months: 120
+  full_name: Multiple sclerosis
+  gender: both
+  scale: binary
+26258: 
+  name: OP
+  follow_up_months: 120
+  full_name: Osteoporosis
+  gender: both
+  scale: binary
+26267:
+  name: PC
+  follow_up_months: 120
+  full_name: Prostate cancer
+  gender: male
+  scale: binary
+26260:
+  name: PD
+  follow_up_months: 120
+  full_name: Parkinson's disease
+  gender: both
+  scale: binary
+26265:
+  name: PSO
+  follow_up_months: 120
+  full_name: Psoriasis
+  gender: both
+  scale: binary
+26273:
+  name: RA
+  follow_up_months: 120
+  full_name: Rheumatoid arthritis
+  gender: both
+  scale: binary
+26275:
+  name: SCZ
+  follow_up_months: 120
+  full_name: Schizophrenia
+  gender: both
+  scale: binary
+26278:
+  name: SLE
+  follow_up_months: 120
+  full_name: Systemic lupus erythematosus
+  gender: both
+  scale: binary
+26283:
+  name: T1D
+  follow_up_months: 120
+  full_name: Type 1 diabetes
+  gender: both
+  scale: binary
+26285:
+  name: T2D
+  follow_up_months: 120
+  full_name: Type 2 diabetes
+  gender: both
+  scale: binary
+26287:
+  name: UC
+  follow_up_months: 120
+  full_name: Ulcerative colitis
+  gender: both
+  scale: binary
+26289:
+  name: VTE
+  follow_up_months: 120
+  full_name: Venous thromboembolic disease
+  gender: both
+  scale: binary
